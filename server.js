@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 
-// ✅ 1. Setup CORS config
+// ✅ 1. CORS
 const allowedOrigins = [
   "http://localhost:5173",
   "https://eventease-frontend-gold.vercel.app",
@@ -18,30 +18,34 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
 };
 
-// ✅ 2. Apply CORS middleware and preflight
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Use same options here
 
-// ✅ 3. Middleware
+// ✅ 2. Middleware to manually fix preflight OPTIONS
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin,X-Requested-With,Content-Type,Accept,Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200); // 💥 Important for CORS preflight to succeed
+  }
+  next();
+});
+
+// ✅ 3. Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ 4. Serve static uploads
+// ✅ 4. Serve static
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-// ✅ 5. Routes and DB
+// ✅ 5. Database and routes
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
@@ -62,7 +66,7 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-// ✅ 7. Start server
+// ✅ 7. Server start
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running at port ${PORT}`);
