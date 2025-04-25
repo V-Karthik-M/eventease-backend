@@ -9,29 +9,28 @@ dotenv.config();
 
 const app = express();
 
-// ✅ 1. Setup CORS before any middleware
+// ✅ 1. Setup CORS config
 const allowedOrigins = [
   "http://localhost:5173",
   "https://eventease-frontend-gold.vercel.app",
   "https://eventease-frontend-one.vercel.app",
-  process.env.CLIENT_ORIGIN
+  process.env.CLIENT_ORIGIN,
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+};
 
-// ✅ 2. Handle OPTIONS preflight globally
-app.options("*", cors());
+// ✅ 2. Apply CORS middleware and preflight
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Use same options here
 
 // ✅ 3. Middleware
 app.use(express.json());
@@ -42,7 +41,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-// ✅ 5. DB and Routes
+// ✅ 5. Routes and DB
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
