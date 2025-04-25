@@ -27,7 +27,6 @@ const allowedOrigins = [
   process.env.CLIENT_ORIGIN, // Frontend deployed URL (e.g., https://yourfrontend.vercel.app)
 ];
 
-// CORS middleware setup
 app.use(
   cors({
     origin: function (origin, callback) {
