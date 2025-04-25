@@ -23,40 +23,39 @@ connectDB();
 
 // CORS configuration
 const allowedOrigins = [
-  "http://localhost:5173", // Local development URL
-  process.env.CLIENT_ORIGIN, // Frontend deployed URL (e.g., https://yourfrontend.vercel.app)
+  "http://localhost:5173",
+  process.env.CLIENT_ORIGIN, // Your Vercel frontend
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests from specified origins or from localhost
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true, // Allow cookies to be sent with requests
+    credentials: true,
   })
 );
 
-// Middlewares
-app.use(express.json()); // To parse incoming JSON requests
-app.use(express.urlencoded({ extended: true })); // To parse form data
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Serve static files (images, uploads) from 'public/uploads' folder
+// Serve static files from public/uploads
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 // API Routes
-app.use("/api/auth", authRoutes); // Auth routes (login, register, etc.)
-app.use("/api/events", eventRoutes); // Event-related routes
-app.use("/api/payment", paymentRoutes); // Payment routes
-app.use("/api/bookings", bookingRoutes); // Booking routes
+app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/bookings", bookingRoutes);
 
-// Graceful Shutdown: Close the MongoDB connection when the server is stopped
+// Graceful shutdown
 process.on("SIGINT", async () => {
   console.log("🛑 Gracefully shutting down...");
   await mongoose.connection.close();
@@ -64,7 +63,7 @@ process.on("SIGINT", async () => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 5001; // Default port is 5001
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running at port ${PORT}`);
 });
