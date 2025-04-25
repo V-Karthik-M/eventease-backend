@@ -11,6 +11,7 @@ const router = express.Router();
 // ✅ Helper: Send Reset Email
 const sendResetEmail = async (email, token) => {
   try {
+    const frontendURL = process.env.CLIENT_ORIGIN || "http://localhost:5173"; // dynamic frontend URL
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -23,7 +24,7 @@ const sendResetEmail = async (email, token) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Reset Your Password",
-      html: `<p>Click <a href="http://localhost:5173/resetpassword/${token}">here</a> to reset your password.</p>`,
+      html: `<p>Click <a href="${frontendURL}/resetpassword/${token}">here</a> to reset your password.</p>`,
     };
 
     await transporter.sendMail(mailOptions);
