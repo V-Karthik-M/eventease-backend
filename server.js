@@ -24,8 +24,11 @@ connectDB();
 // CORS configuration
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.CLIENT_ORIGIN, // Your Vercel frontend
+  process.env.CLIENT_ORIGIN,
 ];
+
+// ✅ Handle preflight OPTIONS requests
+app.options("*", cors());
 
 app.use(
   cors({
