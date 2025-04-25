@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-const UserSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, "Name is required"],
-      minlength: [3, "Name must be at least 3 characters"],
+      minlength: [3, "Name must be at least 3 characters long."],
       trim: true,
     },
     email: {
@@ -17,30 +17,31 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email address",
+        "Please enter a valid email address.",
       ],
     },
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters"],
+      minlength: [8, "Password must be at least 8 characters long."],
+      select: false, // ✅ Important: do not fetch password by default
     },
   },
   { timestamps: true }
 );
 
-// ✅ Hash password if modified
-UserSchema.pre("save", async function (next) {
+// ✅ Hash the password before saving
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// ✅ Compare passwords
-UserSchema.methods.matchPassword = async function (enteredPassword) {
+// ✅ Method to compare passwords
+userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model("User", UserSchema);
+const User = mongoose.model("User", userSchema);
 export default User;
