@@ -9,10 +9,12 @@ dotenv.config();
 
 const app = express();
 
-// ✅ 1. Setup CORS before any route/middleware
+// ✅ 1. Setup CORS before any middleware
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.CLIENT_ORIGIN,
+  "https://eventease-frontend-gold.vercel.app",
+  "https://eventease-frontend-one.vercel.app",
+  process.env.CLIENT_ORIGIN
 ];
 
 app.use(
@@ -35,12 +37,12 @@ app.options("*", cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ 4. Serve static
+// ✅ 4. Serve static uploads
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-// ✅ 5. Routes (MUST come after CORS)
+// ✅ 5. DB and Routes
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
@@ -48,6 +50,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 
 connectDB();
+
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/payment", paymentRoutes);
