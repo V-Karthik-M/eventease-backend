@@ -9,7 +9,7 @@ import {
 
 const router = express.Router();
 
-// Authentication Routes
+// ✅ Authentication Routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
