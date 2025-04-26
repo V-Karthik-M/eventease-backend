@@ -6,9 +6,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// ✅ Helper to send reset password email
+// ✅ Helper to send Reset Password Email
 const sendResetEmail = async (email, token) => {
   const frontendURL = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -48,7 +49,11 @@ export const registerUser = async (req, res) => {
     if (existingUser)
       return res.status(400).json({ message: "Email is already registered." });
 
-    const user = new User({ name, email, password });
+    // ✅ HASH the password manually before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = new User({ name, email, password: hashedPassword });
     await user.save();
 
     console.log(`✅ User Registered: ${email}`);
@@ -64,22 +69,17 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
   console.log("🔐 Login attempt:", email);
 
-  if (!email || !password) {
+  if (!email || !password)
     return res.status(400).json({ message: "Email and password are required." });
-  }
 
   try {
     const user = await User.findOne({ email });
-    if (!user || !user.password) {
+    if (!user)
       return res.status(400).json({ message: "Invalid email or password." });
-    }
 
-    console.log("🔎 User found:", user.email);
-
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
       return res.status(400).json({ message: "Invalid email or password." });
-    }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "60d",
@@ -89,7 +89,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
-      maxAge: 1000 * 60 * 60 * 24 * 60,
+      maxAge: 1000 * 60 * 60 * 24 * 60, // 60 days
     });
 
     res.status(200).json({
@@ -147,11 +147,10 @@ export const resetPassword = async (req, res) => {
     if (!user)
       return res.status(400).json({ message: "Invalid token or user not found." });
 
-    if (!password || password.length < 8 || !/[A-Z]/.test(password)) {
+    if (!password || password.length < 8 || !/[A-Z]/.test(password))
       return res.status(400).json({
         message: "Password must be at least 8 characters and contain an uppercase letter.",
       });
-    }
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
