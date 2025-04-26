@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// ✅ Helper to send Reset Password Email
+// ✅ Helper: Send Reset Email
 const sendResetEmail = async (email, token) => {
   const frontendURL = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 
@@ -49,11 +49,7 @@ export const registerUser = async (req, res) => {
     if (existingUser)
       return res.status(400).json({ message: "Email is already registered." });
 
-    // ✅ HASH the password manually before saving
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = new User({ name, email, password: hashedPassword });
+    const user = new User({ name, email, password });
     await user.save();
 
     console.log(`✅ User Registered: ${email}`);
@@ -64,7 +60,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// ✅ Login User
+// ✅ Login User (✔️ with select +password fix)
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
   console.log("🔐 Login attempt:", email);
@@ -73,11 +69,11 @@ export const loginUser = async (req, res) => {
     return res.status(400).json({ message: "Email and password are required." });
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password"); // ✔️ select password manually
     if (!user)
       return res.status(400).json({ message: "Invalid email or password." });
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.matchPassword(password);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid email or password." });
 
@@ -89,7 +85,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
-      maxAge: 1000 * 60 * 60 * 24 * 60, // 60 days
+      maxAge: 1000 * 60 * 60 * 24 * 60,
     });
 
     res.status(200).json({
