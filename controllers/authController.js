@@ -64,17 +64,22 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
   console.log("🔐 Login attempt:", email);
 
-  if (!email || !password)
+  if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required." });
+  }
 
   try {
     const user = await User.findOne({ email });
-    if (!user)
+    if (!user || !user.password) {
       return res.status(400).json({ message: "Invalid email or password." });
+    }
+
+    console.log("🔎 User found:", user.email);
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch)
+    if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password." });
+    }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "60d",
@@ -84,7 +89,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
-      maxAge: 1000 * 60 * 60 * 24 * 60, // 60 days
+      maxAge: 1000 * 60 * 60 * 24 * 60,
     });
 
     res.status(200).json({
@@ -142,10 +147,11 @@ export const resetPassword = async (req, res) => {
     if (!user)
       return res.status(400).json({ message: "Invalid token or user not found." });
 
-    if (!password || password.length < 8 || !/[A-Z]/.test(password))
+    if (!password || password.length < 8 || !/[A-Z]/.test(password)) {
       return res.status(400).json({
         message: "Password must be at least 8 characters and contain an uppercase letter.",
       });
+    }
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
