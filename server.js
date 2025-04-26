@@ -7,19 +7,18 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-// Create Express App
+// ✅ 1. Create Express App
 const app = express();
 
-// ✅ 1. Set up allowed origins for CORS
+// ✅ 2. Set up allowed origins for CORS
 const allowedOrigins = [
   "http://localhost:5173",
   "https://eventease-frontend-one.vercel.app",
   "https://eventease-frontend-gold.vercel.app",
-  "https://eventease-frontend-mhcye4nkq-venkatkarthik-marinenis-projects.vercel.app", // 👈 add this
+  "https://eventease-frontend-mhcye4nkq-venkatkarthik-marinenis-projects.vercel.app",
   process.env.CLIENT_ORIGIN,
 ];
 
-// ✅ 2. Dynamic CORS middleware
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -33,22 +32,24 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Preflight support
 
-// ✅ 3. Middleware to parse JSON and form data
+// ✅ 3. Handle Preflight OPTIONS requests properly
+app.options("*", cors(corsOptions));
+
+// ✅ 4. Middleware for parsing JSON and URL-encoded bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ 4. Serve static files (uploads/images)
+// ✅ 5. Serve static uploads/images
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-// ✅ 5. Connect to MongoDB
+// ✅ 6. MongoDB connection
 import connectDB from "./config/database.js";
 connectDB();
 
-// ✅ 6. Import and use Routes
+// ✅ 7. API Routes
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
@@ -59,14 +60,14 @@ app.use("/api/events", eventRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/bookings", bookingRoutes);
 
-// ✅ 7. Graceful Shutdown
+// ✅ 8. Graceful Shutdown (good practice)
 process.on("SIGINT", async () => {
-  console.log("🛑 Gracefully shutting down server...");
+  console.log("🛑 Gracefully shutting down...");
   await mongoose.connection.close();
   process.exit(0);
 });
 
-// ✅ 8. Start Server
+// ✅ 9. Start Server
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running at port ${PORT}`);
