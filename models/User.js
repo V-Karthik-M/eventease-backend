@@ -24,13 +24,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Password is required"],
       minlength: [8, "Password must be at least 8 characters long."],
-      select: false, // ✅ Important: do not fetch password by default
+      select: false, // ❗Don't return password by default
     },
   },
   { timestamps: true }
 );
 
-// ✅ Hash the password before saving
+// ✅ Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
@@ -38,7 +38,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-// ✅ Method to compare passwords
+// ✅ Compare passwords
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
