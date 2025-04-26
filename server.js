@@ -14,6 +14,8 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "https://eventease-frontend-one.vercel.app",
+  "https://eventease-frontend-gold.vercel.app",
+  "https://eventease-frontend-mhcye4nkq-venkatkarthik-marinenis-projects.vercel.app", // 👈 add this
   process.env.CLIENT_ORIGIN,
 ];
 
