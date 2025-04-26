@@ -7,66 +7,66 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
+// Create Express App
 const app = express();
 
-// ✅ 1. CORS
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://eventease-frontend-gold.vercel.app",
-  "https://eventease-frontend-one.vercel.app",
-  process.env.CLIENT_ORIGIN,
-];
-
-const corsOptions = {
-  origin: allowedOrigins,
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-
-// ✅ 2. Middleware to manually fix preflight OPTIONS
+// ✅ 1. Handle OPTIONS requests manually (important for CORS preflight)
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin,X-Requested-With,Content-Type,Accept,Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200); // 💥 Important for CORS preflight to succeed
+    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Credentials", "true");
+    return res.sendStatus(204); // Empty successful response for OPTIONS
   }
   next();
 });
 
-// ✅ 3. Body parsers
+// ✅ 2. Set up CORS properly
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://eventease-frontend-one.vercel.app",
+  "https://eventease-frontend-gold.vercel.app",
+  process.env.CLIENT_ORIGIN,
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
+// ✅ 3. Middleware to parse JSON and form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ 4. Serve static
+// ✅ 4. Serve static files (uploads/images)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-// ✅ 5. Database and routes
+// ✅ 5. Connect to MongoDB
 import connectDB from "./config/database.js";
+connectDB();
+
+// ✅ 6. Import and use Routes
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
-
-connectDB();
 
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/bookings", bookingRoutes);
 
-// ✅ 6. Graceful shutdown
+// ✅ 7. Graceful Shutdown (optional but professional)
 process.on("SIGINT", async () => {
-  console.log("🛑 Gracefully shutting down...");
+  console.log("🛑 Gracefully shutting down server...");
   await mongoose.connection.close();
   process.exit(0);
 });
 
-// ✅ 7. Server start
+// ✅ 8. Start Server
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running at port ${PORT}`);
