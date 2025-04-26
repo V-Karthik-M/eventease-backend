@@ -7,48 +7,45 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
+// Create Express App
 const app = express();
 
-// ✅ Real Allow Origins
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://eventease-frontend-one.vercel.app",
-  "https://eventease-frontend-gold.vercel.app",
-  "https://eventease-frontend-mhcye4nkq-venkatkarthik-marinenis-projects.vercel.app",
-  "https://eventease-frontend-d9eqd1pgp-venkatkarthik-marinenis-projects.vercel.app", // << add this one
-  process.env.CLIENT_ORIGIN,
-];
+// ✅ 1. Correct CORS setup
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) {
+      // Allow server-to-server or Postman requests (no origin)
+      return callback(null, true);
+    }
+    if (
+      origin.includes("vercel.app") || // Allow any Vercel deployment
+      origin.includes("localhost")     // Allow localhost (for development)
+    ) {
+      return callback(null, true);
+    }
+    console.log("❌ Blocked by CORS:", origin);
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
 
-// ✅ Dynamic CORS Handler
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204); // Preflight success
-  }
-  next();
-});
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Handle preflight OPTIONS
 
-// ✅ Middlewares
+// ✅ 2. Middleware for JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Static files
+// ✅ 3. Serve static uploads
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
-// ✅ MongoDB Connect
+// ✅ 4. Connect to MongoDB
 import connectDB from "./config/database.js";
 connectDB();
 
-// ✅ Routes
+// ✅ 5. Routes
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
@@ -59,14 +56,14 @@ app.use("/api/events", eventRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/bookings", bookingRoutes);
 
-// ✅ Graceful Shutdown
+// ✅ 6. Graceful Shutdown
 process.on("SIGINT", async () => {
   console.log("🛑 Gracefully shutting down server...");
   await mongoose.connection.close();
   process.exit(0);
 });
 
-// ✅ Start Server
+// ✅ 7. Start Server
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running at port ${PORT}`);
